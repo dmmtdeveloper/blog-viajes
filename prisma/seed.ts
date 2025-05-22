@@ -92,6 +92,12 @@ async function main() {
   const cityCategory = await prisma.category.findUnique({
     where: { name: "City" },
   });
+  const natureCategory = await prisma.category.findUnique({
+    where: { name: "Nature" },
+  });
+  const cultureCategory = await prisma.category.findUnique({
+    where: { name: "Culture" },
+  });
 
   if (adventureCategory && beachCategory && cityCategory) {
     const post1 = await prisma.post.upsert({
@@ -107,7 +113,7 @@ async function main() {
         categories: {
           connect: [
             { id: adventureCategory.id },
-            { id: natureCategory?.id ?? 0 },
+            ...(natureCategory ? [{ id: natureCategory.id }] : []),
           ],
         },
       },
@@ -140,7 +146,10 @@ async function main() {
         location: "Tokyo, Japan",
         authorId: admin.id,
         categories: {
-          connect: [{ id: cityCategory.id }, { id: cultureCategory?.id ?? 0 }],
+          connect: [
+            { id: cityCategory.id },
+            ...(cultureCategory ? [{ id: cultureCategory.id }] : []),
+          ],
         },
       },
     });

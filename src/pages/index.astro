@@ -3,20 +3,22 @@ import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import PostCard from "../components/PostCard.astro";
-import { prisma } from "../lib/prisma";
+import { prisma } from "../lib";
 
 // Get all published posts for the homepage
 const posts = await prisma.post.findMany({
   where: {
     published: true,
   },
-  orderBy: {
-    createdAt: "desc",
-  },
-  include: {
+  select: {
+    id: true,
+    title: true,
+    content: true,
+    imageUrl: true,
+    location: true,
+    createdAt: true,
     author: {
       select: {
-        id: true,
         name: true,
         profileImage: true,
       },
@@ -33,6 +35,9 @@ const posts = await prisma.post.findMany({
         likes: true,
       },
     },
+  },
+  orderBy: {
+    createdAt: "desc",
   },
 });
 
@@ -104,7 +109,21 @@ const categories = await prisma.category.findMany({
     <section class="mb-12">
       <h2 class="text-2xl font-bold mb-6">Latest Travel Stories</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {posts.map((post) => <PostCard post={post} />)}
+        {
+          posts.map((post) => {
+            // Convertir null a undefined para las propiedades opcionales
+            const formattedPost = {
+              ...post,
+              imageUrl: post.imageUrl || undefined,
+              location: post.location || undefined,
+              author: {
+                ...post.author,
+                profileImage: post.author.profileImage || undefined,
+              },
+            };
+            return <PostCard post={formattedPost} />;
+          })
+        }
       </div>
     </section>
 
