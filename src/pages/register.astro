@@ -1,23 +1,25 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
 ---
 
 <Layout title="Sign Up - Travel Blog">
   <Header />
-  
+
   <main class="container mx-auto px-4 py-12">
     <div class="max-w-md mx-auto bg-white rounded-lg shadow-md overflow-hidden">
       <div class="py-4 px-6 bg-primary-600 text-white text-center">
         <h1 class="text-2xl font-bold">Create an Account</h1>
       </div>
-      
+
       <form id="register-form" class="py-6 px-8">
         <div class="mb-4" id="message-container"></div>
-        
+
         <div class="mb-4">
-          <label for="name" class="block text-gray-700 text-sm font-medium mb-2">Full Name</label>
+          <label for="name" class="block text-gray-700 text-sm font-medium mb-2"
+            >Full Name</label
+          >
           <input
             type="text"
             id="name"
@@ -27,9 +29,13 @@ import Footer from '../components/Footer.astro';
             placeholder="John Doe"
           />
         </div>
-        
+
         <div class="mb-4">
-          <label for="email" class="block text-gray-700 text-sm font-medium mb-2">Email Address</label>
+          <label
+            for="email"
+            class="block text-gray-700 text-sm font-medium mb-2"
+            >Email Address</label
+          >
           <input
             type="email"
             id="email"
@@ -39,9 +45,12 @@ import Footer from '../components/Footer.astro';
             placeholder="your@email.com"
           />
         </div>
-        
+
         <div class="mb-4">
-          <label for="password" class="block text-gray-700 text-sm font-medium mb-2">Password</label>
+          <label
+            for="password"
+            class="block text-gray-700 text-sm font-medium mb-2">Password</label
+          >
           <input
             type="password"
             id="password"
@@ -51,11 +60,17 @@ import Footer from '../components/Footer.astro';
             class="form-input w-full px-4 py-2 border rounded-md focus:ring-primary-500 focus:border-primary-500"
             placeholder="••••••••"
           />
-          <p class="text-xs text-gray-500 mt-1">Password must be at least 6 characters long</p>
+          <p class="text-xs text-gray-500 mt-1">
+            Password must be at least 6 characters long
+          </p>
         </div>
-        
+
         <div class="mb-6">
-          <label for="confirm-password" class="block text-gray-700 text-sm font-medium mb-2">Confirm Password</label>
+          <label
+            for="confirm-password"
+            class="block text-gray-700 text-sm font-medium mb-2"
+            >Confirm Password</label
+          >
           <input
             type="password"
             id="confirm-password"
@@ -66,7 +81,7 @@ import Footer from '../components/Footer.astro';
             placeholder="••••••••"
           />
         </div>
-        
+
         <div class="mb-6">
           <div class="flex items-center">
             <input
@@ -77,11 +92,19 @@ import Footer from '../components/Footer.astro';
               class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
             />
             <label for="terms" class="ml-2 block text-sm text-gray-700">
-              I agree to the <a href="/terms" class="text-primary-600 hover:text-primary-800">Terms of Service</a> and <a href="/privacy" class="text-primary-600 hover:text-primary-800">Privacy Policy</a>
+              I agree to the <a
+                href="/terms"
+                class="text-primary-600 hover:text-primary-800"
+                >Terms of Service</a
+              > and <a
+                href="/privacy"
+                class="text-primary-600 hover:text-primary-800"
+                >Privacy Policy</a
+              >
             </label>
           </div>
         </div>
-        
+
         <div class="mb-6">
           <button
             type="submit"
@@ -90,68 +113,76 @@ import Footer from '../components/Footer.astro';
             Create Account
           </button>
         </div>
-        
+
         <p class="text-center text-gray-600 text-sm">
           Already have an account?
-          <a href="/login" class="text-primary-600 hover:text-primary-800 font-medium">
+          <a
+            href="/login"
+            class="text-primary-600 hover:text-primary-800 font-medium"
+          >
             Sign in
           </a>
         </p>
       </form>
     </div>
   </main>
-  
+
   <Footer />
 </Layout>
 
 <script>
   // Form validation
-  const registerForm = document.getElementById('register-form') as HTMLFormElement;
-  const passwordInput = document.getElementById('password') as HTMLInputElement;
-  const confirmPasswordInput = document.getElementById('confirm-password') as HTMLInputElement;
-  const messageContainer = document.getElementById('message-container');
-  
+  const registerForm = document.getElementById(
+    "register-form"
+  ) as HTMLFormElement;
+  const passwordInput = document.getElementById("password") as HTMLInputElement;
+  const confirmPasswordInput = document.getElementById(
+    "confirm-password"
+  ) as HTMLInputElement;
+  const messageContainer = document.getElementById("message-container");
+
   // Validate password match
   function validatePasswordMatch() {
     if (passwordInput.value !== confirmPasswordInput.value) {
       confirmPasswordInput.setCustomValidity("Passwords don't match");
     } else {
-      confirmPasswordInput.setCustomValidity('');
+      confirmPasswordInput.setCustomValidity("");
     }
   }
-  
-  passwordInput?.addEventListener('change', validatePasswordMatch);
-  confirmPasswordInput?.addEventListener('keyup', validatePasswordMatch);
-  
+
+  passwordInput?.addEventListener("change", validatePasswordMatch);
+  confirmPasswordInput?.addEventListener("keyup", validatePasswordMatch);
+
   // Register form submission
-  registerForm?.addEventListener('submit', async (e) => {
+  registerForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    
-    const name = (document.getElementById('name') as HTMLInputElement).value;
-    const email = (document.getElementById('email') as HTMLInputElement).value;
-    const password = (document.getElementById('password') as HTMLInputElement).value;
-    
+
+    const name = (document.getElementById("name") as HTMLInputElement).value;
+    const email = (document.getElementById("email") as HTMLInputElement).value;
+    const password = (document.getElementById("password") as HTMLInputElement)
+      .value;
+
     try {
       // Clear previous messages
       if (messageContainer) {
-        messageContainer.innerHTML = '';
+        messageContainer.innerHTML = "";
       }
-      
-      const response = await fetch('/api/register', {
-        method: 'POST',
+
+      const response = await fetch("/api/register", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ name, email, password }),
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         // Store token and user info in localStorage
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
+        localStorage.setItem("authToken", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+
         // Show success message
         if (messageContainer) {
           messageContainer.innerHTML = `
@@ -160,10 +191,10 @@ import Footer from '../components/Footer.astro';
             </div>
           `;
         }
-        
+
         // Redirect to home page after successful registration
         setTimeout(() => {
-          window.location.href = '/';
+          window.location.href = "/";
         }, 1500);
       } else {
         // Show error message
@@ -176,8 +207,8 @@ import Footer from '../components/Footer.astro';
         }
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      
+      console.error("Registration error:", error);
+
       // Show generic error message
       if (messageContainer) {
         messageContainer.innerHTML = `

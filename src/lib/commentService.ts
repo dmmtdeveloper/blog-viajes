@@ -1,4 +1,4 @@
-import { prisma } from './prisma';
+import { prisma } from "./prisma";
 
 // Comment types
 export interface CommentCreateInput {
@@ -48,15 +48,15 @@ export const CommentService = {
         },
       },
     });
-    
+
     return comment;
   },
-  
+
   // Get comments for a post
   async getPostComments(postId: number): Promise<CommentResponse[]> {
     const comments = await prisma.comment.findMany({
       where: { postId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: {
         author: {
           select: {
@@ -67,26 +67,30 @@ export const CommentService = {
         },
       },
     });
-    
+
     return comments;
   },
-  
+
   // Update a comment
-  async updateComment(commentId: number, authorId: number, data: CommentUpdateInput): Promise<CommentResponse> {
+  async updateComment(
+    commentId: number,
+    authorId: number,
+    data: CommentUpdateInput
+  ): Promise<CommentResponse> {
     // First check if the comment belongs to the author
     const comment = await prisma.comment.findUnique({
       where: { id: commentId },
       select: { authorId: true },
     });
-    
+
     if (!comment) {
-      throw new Error('Comment not found');
+      throw new Error("Comment not found");
     }
-    
+
     if (comment.authorId !== authorId) {
-      throw new Error('Not authorized to update this comment');
+      throw new Error("Not authorized to update this comment");
     }
-    
+
     // Update the comment
     const updatedComment = await prisma.comment.update({
       where: { id: commentId },
@@ -103,10 +107,10 @@ export const CommentService = {
         },
       },
     });
-    
+
     return updatedComment;
   },
-  
+
   // Delete a comment
   async deleteComment(commentId: number, authorId: number): Promise<void> {
     // First check if the comment belongs to the author
@@ -114,15 +118,15 @@ export const CommentService = {
       where: { id: commentId },
       select: { authorId: true },
     });
-    
+
     if (!comment) {
-      throw new Error('Comment not found');
+      throw new Error("Comment not found");
     }
-    
+
     if (comment.authorId !== authorId) {
-      throw new Error('Not authorized to delete this comment');
+      throw new Error("Not authorized to delete this comment");
     }
-    
+
     await prisma.comment.delete({
       where: { id: commentId },
     });

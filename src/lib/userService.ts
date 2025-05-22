@@ -1,5 +1,5 @@
-import { prisma } from './prisma';
-import { hashPassword, comparePassword, generateToken } from './auth';
+import { prisma } from "./prisma";
+import { hashPassword, comparePassword, generateToken } from "./auth";
 
 // User types
 export interface UserCreateInput {
@@ -44,7 +44,7 @@ export const UserService = {
   // Create a new user (register)
   async createUser(data: UserCreateInput): Promise<AuthResponse> {
     const hashedPassword = await hashPassword(data.password);
-    
+
     const user = await prisma.user.create({
       data: {
         email: data.email,
@@ -63,9 +63,9 @@ export const UserService = {
         },
       },
     });
-    
+
     const token = generateToken(user.id, user.roleId);
-    
+
     return {
       user: {
         id: user.id,
@@ -81,7 +81,7 @@ export const UserService = {
       token,
     };
   },
-  
+
   // Login a user
   async loginUser(data: UserLoginInput): Promise<AuthResponse> {
     const user = await prisma.user.findUnique({
@@ -95,19 +95,19 @@ export const UserService = {
         },
       },
     });
-    
+
     if (!user) {
-      throw new Error('Invalid email or password');
+      throw new Error("Invalid email or password");
     }
-    
+
     const isPasswordValid = await comparePassword(data.password, user.password);
-    
+
     if (!isPasswordValid) {
-      throw new Error('Invalid email or password');
+      throw new Error("Invalid email or password");
     }
-    
+
     const token = generateToken(user.id, user.roleId);
-    
+
     return {
       user: {
         id: user.id,
@@ -123,7 +123,7 @@ export const UserService = {
       token,
     };
   },
-  
+
   // Get a user by ID
   async getUserById(userId: number): Promise<UserResponse | null> {
     const user = await prisma.user.findUnique({
@@ -137,11 +137,11 @@ export const UserService = {
         },
       },
     });
-    
+
     if (!user) {
       return null;
     }
-    
+
     return {
       id: user.id,
       email: user.email,
@@ -154,9 +154,12 @@ export const UserService = {
       },
     };
   },
-  
+
   // Update a user
-  async updateUser(userId: number, data: UserUpdateInput): Promise<UserResponse> {
+  async updateUser(
+    userId: number,
+    data: UserUpdateInput
+  ): Promise<UserResponse> {
     const user = await prisma.user.update({
       where: { id: userId },
       data,
@@ -169,7 +172,7 @@ export const UserService = {
         },
       },
     });
-    
+
     return {
       id: user.id,
       email: user.email,

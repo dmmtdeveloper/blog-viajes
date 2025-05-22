@@ -1,4 +1,4 @@
-import { prisma } from './prisma';
+import { prisma } from "./prisma";
 
 // Post types
 export interface PostCreateInput {
@@ -58,9 +58,11 @@ export const PostService = {
         author: {
           connect: { id: data.authorId },
         },
-        categories: data.categoryIds ? {
-          connect: data.categoryIds.map(id => ({ id })),
-        } : undefined,
+        categories: data.categoryIds
+          ? {
+              connect: data.categoryIds.map((id) => ({ id })),
+            }
+          : undefined,
       },
       include: {
         author: {
@@ -84,23 +86,27 @@ export const PostService = {
         },
       },
     });
-    
+
     return post;
   },
-  
+
   // Get all published posts with pagination
-  async getPublishedPosts(page: number = 1, limit: number = 10, categoryId?: number): Promise<{ posts: PostResponse[]; total: number }> {
+  async getPublishedPosts(
+    page: number = 1,
+    limit: number = 10,
+    categoryId?: number
+  ): Promise<{ posts: PostResponse[]; total: number }> {
     const skip = (page - 1) * limit;
-    
+
     const where = {
       published: true,
       ...(categoryId ? { categories: { some: { id: categoryId } } } : {}),
     };
-    
+
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
         include: {
@@ -127,10 +133,10 @@ export const PostService = {
       }),
       prisma.post.count({ where }),
     ]);
-    
+
     return { posts, total };
   },
-  
+
   // Get a post by ID
   async getPostById(postId: number): Promise<PostResponse | null> {
     const post = await prisma.post.findUnique({
@@ -157,26 +163,30 @@ export const PostService = {
         },
       },
     });
-    
+
     return post;
   },
-  
+
   // Update a post
-  async updatePost(postId: number, authorId: number, data: PostUpdateInput): Promise<PostResponse> {
+  async updatePost(
+    postId: number,
+    authorId: number,
+    data: PostUpdateInput
+  ): Promise<PostResponse> {
     // First check if the post belongs to the author
     const post = await prisma.post.findUnique({
       where: { id: postId },
       select: { authorId: true },
     });
-    
+
     if (!post) {
-      throw new Error('Post not found');
+      throw new Error("Post not found");
     }
-    
+
     if (post.authorId !== authorId) {
-      throw new Error('Not authorized to update this post');
+      throw new Error("Not authorized to update this post");
     }
-    
+
     // Update the post
     const updatedPost = await prisma.post.update({
       where: { id: postId },
@@ -186,10 +196,12 @@ export const PostService = {
         imageUrl: data.imageUrl,
         published: data.published,
         location: data.location,
-        categories: data.categoryIds ? {
-          set: [],  // Clear existing connections
-          connect: data.categoryIds.map(id => ({ id })),
-        } : undefined,
+        categories: data.categoryIds
+          ? {
+              set: [], // Clear existing connections
+              connect: data.categoryIds.map((id) => ({ id })),
+            }
+          : undefined,
       },
       include: {
         author: {
@@ -213,10 +225,10 @@ export const PostService = {
         },
       },
     });
-    
+
     return updatedPost;
   },
-  
+
   // Delete a post
   async deletePost(postId: number, authorId: number): Promise<void> {
     // First check if the post belongs to the author
@@ -224,25 +236,25 @@ export const PostService = {
       where: { id: postId },
       select: { authorId: true },
     });
-    
+
     if (!post) {
-      throw new Error('Post not found');
+      throw new Error("Post not found");
     }
-    
+
     if (post.authorId !== authorId) {
-      throw new Error('Not authorized to delete this post');
+      throw new Error("Not authorized to delete this post");
     }
-    
+
     await prisma.post.delete({
       where: { id: postId },
     });
   },
-  
+
   // Get user's posts
   async getUserPosts(userId: number): Promise<PostResponse[]> {
     const posts = await prisma.post.findMany({
       where: { authorId: userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: {
         author: {
           select: {
@@ -265,7 +277,7 @@ export const PostService = {
         },
       },
     });
-    
+
     return posts;
   },
 };

@@ -22,36 +22,36 @@ model Role {
 
 // Define the User model
 model User {
-  id            Int       @id @default(autoincrement())
-  email         String    @unique
-  name          String
-  password      String
-  profileImage  String?
-  bio           String?
-  roleId        Int
-  role          Role      @relation(fields: [roleId], references: [id])
-  posts         Post[]
-  comments      Comment[]
-  likes         Like[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  name         String
+  password     String
+  profileImage String?
+  bio          String?
+  roleId       Int
+  role         Role      @relation(fields: [roleId], references: [id])
+  posts        Post[]
+  comments     Comment[]
+  likes        Like[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 // Define the Post model
 model Post {
-  id           Int       @id @default(autoincrement())
-  title        String
-  content      String
-  imageUrl     String?
-  published    Boolean   @default(false)
-  location     String?
-  authorId     Int
-  author       User      @relation(fields: [authorId], references: [id])
-  comments     Comment[]
-  categories   Category[]
-  likes        Like[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id         Int        @id @default(autoincrement())
+  title      String
+  content    String
+  imageUrl   String?
+  published  Boolean    @default(false)
+  location   String?
+  authorId   Int
+  author     User       @relation(fields: [authorId], references: [id])
+  comments   Comment[]
+  categories Category[]
+  likes      Like[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 }
 
 // Define the Comment model
