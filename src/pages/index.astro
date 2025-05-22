@@ -1,11 +1,128 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import PostCard from '../components/PostCard.astro';
+import { prisma } from '../lib/prisma';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+// Get all published posts for the homepage
+const posts = await prisma.post.findMany({
+  where: {
+    published: true,
+  },
+  orderBy: {
+    createdAt: 'desc',
+  },
+  include: {
+    author: {
+      select: {
+        id: true,
+        name: true,
+        profileImage: true,
+      },
+    },
+    categories: {
+      select: {
+        id: true,
+        name: true,
+      },
+    },
+    _count: {
+      select: {
+        comments: true,
+        likes: true,
+      },
+    },
+  },
+});
+
+// Get all categories for the filter section
+const categories = await prisma.category.findMany({
+  orderBy: {
+    name: 'asc',
+  },
+});
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="Travel Blog - Explore the World">
+  <Header />
+  
+  <main class="container mx-auto px-4 py-8">
+    <!-- Hero Section -->
+    <section class="relative h-96 rounded-lg overflow-hidden mb-12">
+      <div class="absolute inset-0 bg-gradient-to-r from-primary-700 to-primary-900 opacity-90"></div>
+      <div class="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-4">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">Discover Amazing Places</h1>
+        <p class="text-xl max-w-2xl mb-8">Explore travel guides, tips, and stories from around the world.</p>
+        <div class="flex gap-4">
+          <a href="/destinations" class="btn btn-primary bg-white text-primary-700 hover:bg-gray-100">
+            Browse Destinations
+          </a>
+          <a href="/register" class="btn btn-primary border border-white hover:bg-white hover:text-primary-700">
+            Join Our Community
+          </a>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Category Filter Section -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold mb-6">Explore Categories</h2>
+      <div class="flex flex-wrap gap-3">
+        <a href="/" class="px-4 py-2 bg-primary-600 text-white rounded-full">
+          All
+        </a>
+        {categories.map(category => (
+          <a 
+            href={`/categories/${category.id}`} 
+            class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full"
+          >
+            {category.name}
+          </a>
+        ))}
+      </div>
+    </section>
+    
+    <!-- Featured Posts Section -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold mb-6">Latest Travel Stories</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {posts.map(post => (
+          <PostCard post={post} />
+        ))}
+      </div>
+    </section>
+    
+    <!-- Newsletter Section -->
+    <section class="bg-primary-50 rounded-lg p-8 mb-12">
+      <div class="max-w-3xl mx-auto text-center">
+        <h2 class="text-2xl font-bold mb-4">Join Our Newsletter</h2>
+        <p class="text-gray-600 mb-6">Get the latest travel tips, destinations, and exclusive offers directly to your inbox.</p>
+        <form class="flex flex-col sm:flex-row gap-2">
+          <input 
+            type="email" 
+            placeholder="Your email address" 
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            required
+          />
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+          >
+            Subscribe
+          </button>
+        </form>
+      </div>
+    </section>
+  </main>
+  
+  <Footer />
 </Layout>
+
+<style>
+  .hero-image {
+    background-image: url('/hero-travel.jpg');
+    background-size: cover;
+    background-position: center;
+  }
+</style>

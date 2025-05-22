@@ -1,0 +1,486 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { prisma } from '../../lib/prisma';
+
+// Get the post ID from the URL parameters
+const { id } = Astro.params;
+const postId = parseInt(id || '1');
+
+// Fetch the post and related data
+const post = await prisma.post.findUnique({
+  where: { id: postId },
+  include: {
+    author: {
+      select: {
+        id: true,
+        name: true,
+        profileImage: true,
+        bio: true,
+      },
+    },
+    categories: {
+      select: {
+        id: true,
+        name: true,
+      },
+    },
+    comments: {
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            profileImage: true,
+          },
+        },
+      },
+    },
+    _count: {
+      select: {
+        likes: true,
+      },
+    },
+  },
+});
+
+// Format the date
+const formattedDate = post 
+  ? new Date(post.createdAt).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  : '';
+
+// If post not found, redirect to 404 (or home)
+if (!post) {
+  return Astro.redirect('/');
+}
+
+// Format post content with paragraphs
+const formattedContent = post.content.split('\n\n').map(paragraph => 
+  `<p class="mb-4">${paragraph}</p>`
+).join('');
+
+// Get related posts
+const relatedPosts = await prisma.post.findMany({
+  where: {
+    published: true,
+    id: { not: postId },
+    categories: {
+      some: {
+        id: { in: post.categories.map(c => c.id) },
+      },
+    },
+  },
+  take: 3,
+  orderBy: {
+    createdAt: 'desc',
+  },
+  include: {
+    author: {
+      select: {
+        id: true,
+        name: true,
+        profileImage: true,
+      },
+    },
+    categories: {
+      select: {
+        id: true,
+        name: true,
+      },
+    },
+    _count: {
+      select: {
+        comments: true,
+        likes: true,
+      },
+    },
+  },
+});
+---
+
+<Layout title={`${post.title} - Travel Blog`}>
+  <Header />
+  
+  <main class="container mx-auto px-4 py-8">
+    <article class="max-w-4xl mx-auto">
+      <!-- Post Header -->
+      <header class="mb-8">
+        <div class="flex flex-wrap gap-2 mb-4">
+          {post.categories.map(category => (
+            <a 
+              href={`/categories/${category.id}`} 
+              class="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full"
+            >
+              {category.name}
+            </a>
+          ))}
+        </div>
+        
+        <h1 class="text-4xl font-bold mb-4">{post.title}</h1>
+        
+        <div class="flex items-center text-gray-600 mb-6">
+          <div class="flex items-center mr-6">
+            {post.author.profileImage ? (
+              <img 
+                src={post.author.profileImage} 
+                alt={post.author.name} 
+                class="w-10 h-10 rounded-full mr-3"
+              />
+            ) : (
+              <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                {post.author.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span>By <a href={`/authors/${post.author.id}`} class="text-primary-600 hover:underline">{post.author.name}</a></span>
+          </div>
+          
+          <time datetime={post.createdAt.toISOString()} class="mr-6">{formattedDate}</time>
+          
+          <div class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span class="mr-3">{post.comments.length} comments</span>
+            
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            <span>{post._count.likes} likes</span>
+          </div>
+        </div>
+      </header>
+      
+      <!-- Featured Image -->
+      {post.imageUrl && (
+        <div class="mb-8">
+          <img 
+            src={post.imageUrl} 
+            alt={post.title} 
+            class="w-full h-auto rounded-lg shadow-md"
+          />
+        </div>
+      )}
+      
+      <!-- Location -->
+      {post.location && (
+        <div class="flex items-center mb-8 text-gray-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span>{post.location}</span>
+        </div>
+      )}
+      
+      <!-- Post Content -->
+      <div class="prose prose-lg max-w-none mb-12" set:html={formattedContent} />
+      
+      <!-- Author Bio -->
+      <div class="border-t border-b border-gray-200 py-8 mb-12">
+        <div class="flex items-start">
+          {post.author.profileImage ? (
+            <img 
+              src={post.author.profileImage} 
+              alt={post.author.name} 
+              class="w-16 h-16 rounded-full mr-4"
+            />
+          ) : (
+            <div class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mr-4">
+              <span class="text-xl font-bold">{post.author.name.charAt(0).toUpperCase()}</span>
+            </div>
+          )}
+          
+          <div>
+            <h3 class="text-lg font-bold mb-2">About {post.author.name}</h3>
+            <p class="text-gray-600 mb-3">{post.author.bio || 'Travel enthusiast and blogger.'}</p>
+            <a href={`/authors/${post.author.id}`} class="text-primary-600 hover:underline">
+              View all posts by {post.author.name}
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Comments Section -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6">Comments ({post.comments.length})</h2>
+        
+        <!-- Comment Form -->
+        <div class="bg-gray-50 rounded-lg p-6 mb-8" id="comment-form-container">
+          <h3 class="text-lg font-bold mb-4">Leave a Comment</h3>
+          
+          <div id="login-prompt" class="hidden">
+            <p class="mb-4 text-gray-600">Please <a href="/login" class="text-primary-600 hover:underline">log in</a> to leave a comment.</p>
+          </div>
+          
+          <form id="comment-form" class="hidden">
+            <div class="mb-4" id="message-container"></div>
+            
+            <div class="mb-4">
+              <label for="comment-content" class="block text-gray-700 text-sm font-medium mb-2">Your Comment</label>
+              <textarea
+                id="comment-content"
+                name="content"
+                rows="4"
+                required
+                class="form-input w-full px-4 py-2 border rounded-md focus:ring-primary-500 focus:border-primary-500"
+                placeholder="Share your thoughts..."
+              ></textarea>
+            </div>
+            
+            <button
+              type="submit"
+              class="bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            >
+              Post Comment
+            </button>
+          </form>
+        </div>
+        
+        <!-- Comments List -->
+        <div id="comments-list">
+          {post.comments.length === 0 ? (
+            <p class="text-gray-600">No comments yet. Be the first to share your thoughts!</p>
+          ) : (
+            <ul class="space-y-6">
+              {post.comments.map(comment => (
+                <li class="border-b border-gray-100 pb-6" id={`comment-${comment.id}`}>
+                  <div class="flex items-start">
+                    {comment.author.profileImage ? (
+                      <img 
+                        src={comment.author.profileImage} 
+                        alt={comment.author.name} 
+                        class="w-10 h-10 rounded-full mr-3"
+                      />
+                    ) : (
+                      <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                        <span class="font-bold">{comment.author.name.charAt(0).toUpperCase()}</span>
+                      </div>
+                    )}
+                    
+                    <div class="flex-1">
+                      <div class="flex items-center mb-1">
+                        <h4 class="font-bold mr-2">{comment.author.name}</h4>
+                        <time datetime={comment.createdAt.toISOString()} class="text-sm text-gray-500">
+                          {new Date(comment.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </time>
+                      </div>
+                      <p class="text-gray-700">{comment.content}</p>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+      
+      <!-- Related Posts -->
+      {relatedPosts.length > 0 && (
+        <section class="mb-12">
+          <h2 class="text-2xl font-bold mb-6">Related Posts</h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {relatedPosts.map(relatedPost => (
+              <div class="card overflow-hidden">
+                <a href={`/posts/${relatedPost.id}`} class="block">
+                  <img 
+                    src={relatedPost.imageUrl || '/placeholder-travel.jpg'} 
+                    alt={relatedPost.title} 
+                    class="w-full h-40 object-cover"
+                    onerror="this.src='/placeholder-travel.jpg'; this.onerror=null;"
+                  />
+                </a>
+                
+                <div class="p-4">
+                  <h3 class="font-bold mb-2">
+                    <a href={`/posts/${relatedPost.id}`} class="hover:text-primary-600">
+                      {relatedPost.title}
+                    </a>
+                  </h3>
+                  
+                  <div class="flex justify-between items-center text-sm text-gray-500">
+                    <span>{relatedPost.author.name}</span>
+                    <time datetime={relatedPost.createdAt.toISOString()}>
+                      {new Date(relatedPost.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </time>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </article>
+  </main>
+  
+  <Footer />
+</Layout>
+
+<script>
+  // Comment functionality
+  const commentForm = document.getElementById('comment-form');
+  const loginPrompt = document.getElementById('login-prompt');
+  const messageContainer = document.getElementById('message-container');
+  const commentsList = document.getElementById('comments-list');
+  
+  // Check if user is logged in
+  function checkAuth() {
+    const token = localStorage.getItem('authToken');
+    const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}') : null;
+    
+    if (token && user) {
+      // User is logged in, show comment form
+      if (commentForm) commentForm.classList.remove('hidden');
+      if (loginPrompt) loginPrompt.classList.add('hidden');
+      return { token, user };
+    } else {
+      // User is not logged in, show login prompt
+      if (commentForm) commentForm.classList.add('hidden');
+      if (loginPrompt) loginPrompt.classList.remove('hidden');
+      return null;
+    }
+  }
+  
+  // Initialize auth check
+  const auth = checkAuth();
+  
+  // Handle comment submission
+  commentForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const auth = checkAuth();
+    if (!auth) return;
+    
+    const content = (document.getElementById('comment-content') as HTMLTextAreaElement).value;
+    const postId = parseInt(window.location.pathname.split('/').pop() || '0');
+    
+    try {
+      // Clear previous messages
+      if (messageContainer) {
+        messageContainer.innerHTML = '';
+      }
+      
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify({ content, postId }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Clear form
+        (document.getElementById('comment-content') as HTMLTextAreaElement).value = '';
+        
+        // Show success message
+        if (messageContainer) {
+          messageContainer.innerHTML = `
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+              <p>${data.message}</p>
+            </div>
+          `;
+        }
+        
+        // Add new comment to list
+        if (commentsList) {
+          // If there are no comments yet, remove the "no comments" message
+          if (commentsList.innerHTML.includes('No comments yet')) {
+            commentsList.innerHTML = '<ul class="space-y-6" id="comments-list-ul"></ul>';
+          }
+          
+          const commentsListUl = document.getElementById('comments-list-ul') || commentsList;
+          
+          const newComment = document.createElement('li');
+          newComment.id = `comment-${data.comment.id}`;
+          newComment.className = 'border-b border-gray-100 pb-6';
+          
+          const commentDate = new Date(data.comment.createdAt).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          });
+          
+          newComment.innerHTML = `
+            <div class="flex items-start">
+              ${data.comment.author.profileImage ? 
+                `<img 
+                  src="${data.comment.author.profileImage}" 
+                  alt="${data.comment.author.name}" 
+                  class="w-10 h-10 rounded-full mr-3"
+                />` : 
+                `<div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                  <span class="font-bold">${data.comment.author.name.charAt(0).toUpperCase()}</span>
+                </div>`
+              }
+              
+              <div class="flex-1">
+                <div class="flex items-center mb-1">
+                  <h4 class="font-bold mr-2">${data.comment.author.name}</h4>
+                  <time datetime="${data.comment.createdAt}" class="text-sm text-gray-500">
+                    ${commentDate}
+                  </time>
+                </div>
+                <p class="text-gray-700">${data.comment.content}</p>
+              </div>
+            </div>
+          `;
+          
+          commentsListUl.prepend(newComment);
+          
+          // Update comment count
+          const countElement = document.querySelector('h2.text-2xl');
+          if (countElement) {
+            const currentCount = parseInt(countElement.textContent?.match(/\d+/)?.[0] || '0');
+            countElement.textContent = `Comments (${currentCount + 1})`;
+          }
+        }
+        
+        // Scroll to the new comment
+        setTimeout(() => {
+          window.scrollTo({
+            top: commentForm?.offsetTop || 0,
+            behavior: 'smooth',
+          });
+        }, 200);
+      } else {
+        // Show error message
+        if (messageContainer) {
+          messageContainer.innerHTML = `
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+              <p>${data.message}</p>
+            </div>
+          `;
+        }
+      }
+    } catch (error) {
+      console.error('Comment error:', error);
+      
+      // Show generic error message
+      if (messageContainer) {
+        messageContainer.innerHTML = `
+          <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+            <p>An error occurred while posting your comment. Please try again.</p>
+          </div>
+        `;
+      }
+    }
+  });
+</script>
